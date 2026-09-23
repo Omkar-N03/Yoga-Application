@@ -1,0 +1,6 @@
+{
+  "name": "People Doing Yoga",
+  "description": "Comprehensive yoga routine planner and pose catalog with 200 authentic poses, day-wise schedule, progress tracking with photo proofs, and video tutorials.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
