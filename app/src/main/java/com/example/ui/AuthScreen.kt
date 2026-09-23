@@ -1,9 +1,12 @@
 package com.example.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,8 +20,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,8 +36,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.YogaViewModel
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun AuthScreen(
     viewModel: YogaViewModel,
@@ -54,9 +60,18 @@ fun AuthScreen(
     val isLoading by viewModel.isLoading.collectAsState()
 
     val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+
+    val submitButtonRequester = remember { BringIntoViewRequester() }
+    val passwordRequester = remember { BringIntoViewRequester() }
+    val confirmPasswordRequester = remember { BringIntoViewRequester() }
 
     Scaffold(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .imePadding(),
+        contentWindowInsets = WindowInsets.safeDrawing,
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Column(
@@ -216,6 +231,7 @@ fun AuthScreen(
                             leadingIcon = {
                                 Icon(Icons.Default.Person, contentDescription = "User Icon", tint = Color(0xFF15803D))
                             },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -246,11 +262,20 @@ fun AuthScreen(
                             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = {
+                                focusManager.clearFocus()
                                 viewModel.login(loginIdentifier, loginPassword) {}
                             }),
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .bringIntoViewRequester(passwordRequester)
+                                .onFocusEvent { focusState ->
+                                    if (focusState.isFocused) {
+                                        coroutineScope.launch {
+                                            passwordRequester.bringIntoView()
+                                        }
+                                    }
+                                }
                                 .testTag("login_password_input"),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -259,6 +284,7 @@ fun AuthScreen(
 
                         Button(
                             onClick = {
+                                focusManager.clearFocus()
                                 viewModel.login(loginIdentifier, loginPassword) {}
                             },
                             enabled = !isLoading,
@@ -270,6 +296,7 @@ fun AuthScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp)
+                                .bringIntoViewRequester(submitButtonRequester)
                                 .testTag("btn_submit_login")
                         ) {
                             if (isLoading) {
@@ -331,6 +358,7 @@ fun AuthScreen(
                             leadingIcon = {
                                 Icon(Icons.Default.Person, contentDescription = "Username Icon", tint = Color(0xFF15803D))
                             },
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -350,7 +378,7 @@ fun AuthScreen(
                             leadingIcon = {
                                 Icon(Icons.Default.Email, contentDescription = "Email Icon", tint = Color(0xFF15803D))
                             },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -379,10 +407,18 @@ fun AuthScreen(
                                 }
                             },
                             visualTransformation = if (regPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .bringIntoViewRequester(passwordRequester)
+                                .onFocusEvent { focusState ->
+                                    if (focusState.isFocused) {
+                                        coroutineScope.launch {
+                                            passwordRequester.bringIntoView()
+                                        }
+                                    }
+                                }
                                 .testTag("reg_password_input"),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -402,11 +438,20 @@ fun AuthScreen(
                             visualTransformation = if (regPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                             keyboardActions = KeyboardActions(onDone = {
+                                focusManager.clearFocus()
                                 viewModel.register(regUsername, regEmail, regPassword, regConfirmPassword) {}
                             }),
                             singleLine = true,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .bringIntoViewRequester(confirmPasswordRequester)
+                                .onFocusEvent { focusState ->
+                                    if (focusState.isFocused) {
+                                        coroutineScope.launch {
+                                            confirmPasswordRequester.bringIntoView()
+                                        }
+                                    }
+                                }
                                 .testTag("reg_confirm_password_input"),
                             shape = RoundedCornerShape(12.dp)
                         )
@@ -415,6 +460,7 @@ fun AuthScreen(
 
                         Button(
                             onClick = {
+                                focusManager.clearFocus()
                                 viewModel.register(regUsername, regEmail, regPassword, regConfirmPassword) {}
                             },
                             enabled = !isLoading,
@@ -426,6 +472,7 @@ fun AuthScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp)
+                                .bringIntoViewRequester(submitButtonRequester)
                                 .testTag("btn_submit_register")
                         ) {
                             if (isLoading) {
